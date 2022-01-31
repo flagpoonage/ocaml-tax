@@ -1,6 +1,0 @@
-(** @canonical Dune__exe.Tax *)
-module Tax = Dune__exe__Tax
-
-
-(** @canonical Dune__exe.Test *)
-module Test = Dune__exe__Test
