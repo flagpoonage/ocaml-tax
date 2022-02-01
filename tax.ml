@@ -21,13 +21,13 @@ let sg_tax () =
     (320_000, 22.0)
   ]
 
-let rec get_country_tax_rates () =
+let rec get_country_tax_brackets () =
   print_string "Enter Country (SG|NZ) -> ";
   let c = read_line () in
   match c with
     | "SG" -> sg_tax ()
     | "NZ" -> nz_tax ()
-    | _ -> get_country_tax_rates ()
+    | _ -> get_country_tax_brackets ()
 
 let rec get_salary () =
   print_string "Enter Salary -> ";
@@ -36,8 +36,32 @@ let rec get_salary () =
     | Some(s) -> s
     | None -> get_salary ()
 
+let calculate_tax_for_bracket (bracket : int * float) income =
+  let (bracket_start, rate) = bracket in
+  let taxable = income - bracket_start in
+  let tax = match taxable > 0 with
+    | true -> (float_of_int taxable) *. (rate /. 100.0)
+    | false -> 0.0
+  in
+  print_endline (Printf.sprintf "Tax of %f, on taxable %i, at rate of %f, for remaining income %i" tax taxable rate income);
+  tax
+
+let calculate_tax (rates : (int * float) list) income =
+  List.fold_right (fun bracket (i, t) ->
+    let taxed = calculate_tax_for_bracket bracket i in
+    let (next_bracket, _) = bracket in
+    match income - next_bracket > 0 with
+      | true -> (next_bracket, taxed +. t)
+      | false -> (i, t)
+  ) rates (income, 0.0)
+  
 
 let () =
-  let r = get_country_tax_rates () in
+  let rates = get_country_tax_brackets () in
+  let salary = get_salary () in
+  let (_, t) = calculate_tax rates salary in
+  print_endline (Printf.sprintf "Total tax: %f" t);
+  (*
+let r = get_country_tax_rates () in
   let s = get_salary () in
-  print_string (Printf.sprintf "%s for %d" c s);
+   print_string (Printf.sprintf "%s for %d" c s); *)
