@@ -36,7 +36,7 @@ let rec get_salary () =
     | Some(s) -> s
     | None -> get_salary ()
 
-let calculate_tax_for_bracket (bracket : int * float) income =
+let calculate_tax_for_bracket bracket income =
   let (bracket_start, rate) = bracket in
   let taxable = income - bracket_start in
   let tax = match taxable > 0 with
@@ -46,22 +46,17 @@ let calculate_tax_for_bracket (bracket : int * float) income =
   print_endline (Printf.sprintf "Tax of %f, on taxable %i, at rate of %f, for remaining income %i" tax taxable rate income);
   tax
 
-let calculate_tax (rates : (int * float) list) income =
-  List.fold_right (fun bracket (i, t) ->
-    let taxed = calculate_tax_for_bracket bracket i in
-    let (next_bracket, _) = bracket in
-    match income - next_bracket > 0 with
-      | true -> (next_bracket, taxed +. t)
-      | false -> (i, t)
+let calculate_tax rates income =
+  List.fold_right (fun bracket (remaining_income, cumulative_tax) ->
+    let tax_for_bracket = calculate_tax_for_bracket bracket remaining_income in
+    let (bracket_threshold, _) = bracket in
+    match income - bracket_threshold > 0 with
+      | true -> (bracket_threshold, tax_for_bracket +. cumulative_tax)
+      | false -> (remaining_income, cumulative_tax)
   ) rates (income, 0.0)
   
-
 let () =
   let rates = get_country_tax_brackets () in
   let salary = get_salary () in
   let (_, t) = calculate_tax rates salary in
   print_endline (Printf.sprintf "Total tax: %f" t);
-  (*
-let r = get_country_tax_rates () in
-  let s = get_salary () in
-   print_string (Printf.sprintf "%s for %d" c s); *)
